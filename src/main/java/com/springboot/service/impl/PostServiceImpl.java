@@ -4,6 +4,7 @@ import com.springboot.entity.Category;
 import com.springboot.entity.Post;
 import com.springboot.exception.ResourceNotFoundException;
 import com.springboot.payload.PostDto;
+import com.springboot.payload.PostDtoV2;
 import com.springboot.payload.PostResponse;
 import com.springboot.repository.CategoryRepository;
 import com.springboot.repository.PostRepository;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -67,6 +69,17 @@ public class PostServiceImpl implements PostService {
         Post post = postRepository.findById(id).orElseThrow(() ->
                 new ResourceNotFoundException("Post", "id", id));
         return modelMapper.map(post, PostDto.class);
+    }
+
+    @Override
+    public PostDtoV2 getPostByIdV2(long id) {
+        Post post = postRepository.findById(id).orElseThrow(() ->
+                new ResourceNotFoundException("Post", "id", id));
+        PostDtoV2 postDtoV2 = modelMapper.map(post, PostDtoV2.class);
+        List<String> tags = new ArrayList<>();
+        tags.add("Java"); tags.add("Python"); tags.add("C++");
+        postDtoV2.setTags(tags);
+        return postDtoV2;
     }
 
     @Override

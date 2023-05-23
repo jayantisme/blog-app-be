@@ -1,6 +1,7 @@
 package com.springboot.controller;
 
 import com.springboot.payload.PostDto;
+import com.springboot.payload.PostDtoV2;
 import com.springboot.payload.PostResponse;
 import com.springboot.service.PostService;
 import com.springboot.utils.AppConstants;
@@ -19,10 +20,8 @@ import java.util.List;
 
 @Tag(name = "CRUD REST APIs For Post Resource")
 @RestController
-@RequestMapping("api/v1/posts")
 public class PostController {
-    private PostService postService;
-
+    private final PostService postService;
     @Autowired
     public PostController(PostService postService) {
         this.postService = postService;
@@ -38,7 +37,7 @@ public class PostController {
     )
     @SecurityRequirement(name = "Bear Authentication")
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("new-post")
+    @PostMapping("api/v1/posts/new-post")
     public ResponseEntity<PostDto> createNewPost(@Valid @RequestBody PostDto postDto) {
         return new ResponseEntity<>(postService.createPost(postDto), HttpStatus.CREATED);
     }
@@ -51,7 +50,7 @@ public class PostController {
             responseCode = "200",
             description = "Http Status 200 SUCCESS"
     )
-    @GetMapping
+    @GetMapping("api/v1/posts")
     public ResponseEntity<PostResponse> getAllPost(
             @RequestParam(value = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NO, required = false) int pageNo,
             @RequestParam(value = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
@@ -60,17 +59,39 @@ public class PostController {
         return ResponseEntity.ok(postService.getAllPost(pageNo, pageSize, sortBy, sortDir));
     }
 
+    /*
+        1.Versioning through URI path -> api/v1/** and api/v2/**
+        2.Versioning through query params -> params="version=1" and params="version=2" inside mapping
+        3.Versioning through custom headers -> It doesn't clutter the URI with version info, but requires custom
+          headers -- headers = "X-API-VERSION=1" and headers = "X-API-VERSION=2" inside mapping
+        4.Versioning through content negotiation -> We give accept req. in header & key as
+          application/vnd.api.v1+json
+          Most commonly used is URI path versioning
+     */
     @Operation(
-            summary = "Get Post By Id Rest API",
+            summary = "Get Post By Id Rest API V1",
             description = "Get post by id REST API is used to get single post from database."
     )
     @ApiResponse(
             responseCode = "200",
             description = "Http Status 200 SUCCESS"
     )
-    @GetMapping("{id}")
-    public ResponseEntity<PostDto> getPostById(@PathVariable long id) {
+    @GetMapping(value = "api/posts/{id}", produces = "application/vnd.jayant.v1+json")
+    public ResponseEntity<PostDto> getPostByIdV1(@PathVariable long id) {
         return ResponseEntity.ok(postService.getPostById(id));
+    }
+
+    @Operation(
+            summary = "Get Post By Id Rest API V2",
+            description = "Get post by id REST API is used to get single post from database."
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Http Status 200 SUCCESS"
+    )
+    @GetMapping(value = "api/posts/{id}", produces = "application/vnd.jayant.v2+json")
+    public ResponseEntity<PostDtoV2> getPostByIdV2(@PathVariable long id) {
+        return ResponseEntity.ok(postService.getPostByIdV2(id));
     }
 
     @Operation(
@@ -83,7 +104,7 @@ public class PostController {
     )
     @SecurityRequirement(name = "Bear Authentication")
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("update/{id}")
+    @PutMapping("api/v1/posts/update/{id}")
     public ResponseEntity<PostDto> updatePostById(@Valid @RequestBody PostDto postDto, @PathVariable long id) {
         return ResponseEntity.ok(postService.updatePost(postDto, id));
     }
@@ -98,7 +119,7 @@ public class PostController {
     )
     @SecurityRequirement(name = "Bear Authentication")
     @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("delete/{id}")
+    @DeleteMapping("api/v1/posts/delete/{id}")
     public ResponseEntity<String> deletePostById(@PathVariable long id) {
         postService.deletePost(id);
         return new ResponseEntity<>("Successfully Deleted!", HttpStatus.OK);
@@ -112,7 +133,7 @@ public class PostController {
             responseCode = "200",
             description = "Http Status 200 SUCCESS"
     )
-    @GetMapping("/category/{id}")
+    @GetMapping("api/v1/posts/category/{id}")
     public ResponseEntity<List<PostDto>> getPostByCategory(@PathVariable("id") Long categoryId) {
         return ResponseEntity.ok(postService.getPostByCategory(categoryId));
     }
